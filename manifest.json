@@ -1,6 +1,6 @@
 {
 	"manifest_version": 3,
-	"name": "Get Web Images",
+	"name": "[Monster] Get Web Images",
 	"version": "1.0",
 	"description": "获取网页图片",
 	"permissions": ["activeTab", "scripting"],
