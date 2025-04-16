@@ -79,7 +79,7 @@ $(document).ready(() => {
           border-radius: 5px;
           cursor: pointer;
         }
-				.selectButtons {
+				#selectButtons {
 					margin-top: 20px;
 					display: flex;
 				}
@@ -91,6 +91,7 @@ $(document).ready(() => {
           cursor: pointer;
 					color: rgba(0, 0, 0, 0.8);
 					margin-right: 10px;
+					font-size: 12px;
 				}
 				#selectAllButton:hover,
 				#deselectAllButton:hover,
@@ -278,8 +279,24 @@ $(document).ready(() => {
 					</div>
 				`);
 			}
-
 			$('#downloadButton').off('click').on('click', downloadImages);
+
+			if (!$('#selectAllButton').length) {
+				$('#selectButtons').append(`
+					<button id="selectAllButton">全选</button>
+					<button id="deselectAllButton">取消</button>
+				`);
+			}
+			$('#selectAllButton')
+				.off('click')
+				.on('click', () => {
+					$('.image-checkbox').prop('checked', true);
+				});
+			$('#deselectAllButton')
+				.off('click')
+				.on('click', () => {
+					$('.image-checkbox').prop('checked', false);
+				});
 
 			const $content = $('#content');
 			$content.empty(); // 清空内容
@@ -305,26 +322,12 @@ $(document).ready(() => {
           <div id="popupContent">
             <span id="popupClose">&times;</span>
             <h1 id="popupTitle">所有图片</h1>
-						<div class="selectButtons">
-							<button id="selectAllButton">全选</button>
-							<button id="deselectAllButton">全不选</button>
-						</div>
+						<div id="selectButtons"></div>
             <div id="content"></div>
           </div>
         </div>
       `);
 		$('body').append($popup);
-
-		$('#selectAllButton')
-			.off('click')
-			.on('click', () => {
-				$('.image-checkbox').prop('checked', true);
-			});
-		$('#deselectAllButton')
-			.off('click')
-			.on('click', () => {
-				$('.image-checkbox').prop('checked', false);
-			});
 
 		// 显示图片
 		displayImages();
