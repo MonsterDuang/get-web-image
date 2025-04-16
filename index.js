@@ -180,7 +180,7 @@ $(document).ready(() => {
       `;
 	document.head.appendChild(style);
 
-	// 修改 downloadImages 函数，去除图片链接中扩展名后面的问号内容
+	// 修改 downloadImages 函数，确保 .webp 文件下载为 .jpg
 	const downloadImages = async () => {
 		const selectedImages = [];
 		$('.image-checkbox:checked').each((_, checkbox) => {
@@ -192,7 +192,7 @@ $(document).ready(() => {
 
 		if (selectedImages.length) {
 			selectedImages.forEach((src) => {
-				if (src.includes('.webp')) {
+				if (src.endsWith('.webp')) {
 					// 将 .webp 图片转换为 .jpg
 					const img = new Image();
 					img.crossOrigin = 'anonymous'; // 允许跨域加载图片
@@ -211,11 +211,16 @@ $(document).ready(() => {
 						}, 'image/jpg');
 					};
 				} else {
-					// 直接下载非 .webp 图片
-					const a = document.createElement('a');
-					a.href = src;
-					a.download = src.split('/').pop(); // 使用图片文件名
-					a.click();
+					// 直接下载其他非 .webp 图片
+					fetch(src)
+						.then((response) => response.blob())
+						.then((blob) => {
+							const a = document.createElement('a');
+							a.href = URL.createObjectURL(blob);
+							a.download = src.split('/').pop(); // 使用图片文件名
+							a.click();
+						})
+						.catch((error) => console.error('下载图片失败:', error));
 				}
 			});
 		} else {
@@ -274,7 +279,7 @@ $(document).ready(() => {
 			if (!$('#downloadButton').length) {
 				$('#popupContent').append(`
 					<div class="bottomBtn">
-						<button id="downloadButton">导出图片</button>
+						<button id="downloadButton">下载图片</button>
 					</div>
 				`);
 			}
@@ -336,7 +341,7 @@ $(document).ready(() => {
 
 	const createDom = () => {
 		// 创建圆形按钮
-		const $button = $('<div id="moveButton">导出</div>');
+		const $button = $('<div id="moveButton">下载</div>');
 		$('body').append($button);
 		$button.hover(
 			() => {
