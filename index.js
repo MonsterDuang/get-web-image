@@ -1,12 +1,6 @@
 // 你可以在这里添加更多的代码来操作宿主网页的window对象
 
 $(document).ready(() => {
-	let tabList = [];
-	let activeTab = null;
-	let smuId = '';
-	let modelId = '';
-	let productList = [];
-
 	// 动态添加样式
 	const style = document.createElement('style');
 	style.innerHTML = `
