@@ -285,16 +285,6 @@ $(document).ready(() => {
 			}
 
 			$('#downloadButton').off('click').on('click', downloadImages);
-			$('#selectAllButton')
-				.off('click')
-				.on('click', () => {
-					$('.image-checkbox').prop('checked', true);
-				});
-			$('#deselectAllButton')
-				.off('click')
-				.on('click', () => {
-					$('.image-checkbox').prop('checked', false);
-				});
 
 			const $content = $('#content');
 			$content.empty(); // 清空内容
@@ -329,6 +319,17 @@ $(document).ready(() => {
         </div>
       `);
 		$('body').append($popup);
+
+		$('#selectAllButton')
+			.off('click')
+			.on('click', () => {
+				$('.image-checkbox').prop('checked', true);
+			});
+		$('#deselectAllButton')
+			.off('click')
+			.on('click', () => {
+				$('.image-checkbox').prop('checked', false);
+			});
 
 		// 显示图片
 		displayImages();
