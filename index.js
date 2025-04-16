@@ -232,7 +232,7 @@ $(document).ready(() => {
 	const openImage = () => {
 		$('.image img').on('click', function () {
 			const src = $(this).attr('src');
-			const isSvg = src.startsWith('data:image/svg');
+			const isSvg = src.startsWith('data:image/svg') || src.includes('.svg');
 			const $imageModal = $(`
                 <div id="imageModal">
                   <div id="imageModalContent">
