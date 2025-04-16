@@ -174,8 +174,9 @@ $(document).ready(() => {
       `;
 	document.head.appendChild(style);
 
-	// 修改 downloadImages 函数，确保 .webp 文件下载为 .jpg
+	// 修改 downloadImages 函数，将多张图片打包成 ZIP 文件
 	const downloadImages = async () => {
+		const zip = new JSZip();
 		const selectedImages = [];
 		$('.image-checkbox:checked').each((_, checkbox) => {
 			let src = $(checkbox).siblings('img').attr('src');
@@ -184,39 +185,39 @@ $(document).ready(() => {
 			selectedImages.push(src);
 		});
 
-		if (selectedImages.length) {
-			selectedImages.forEach((src) => {
-				if (src.endsWith('.webp')) {
-					// 将 .webp 图片转换为 .jpg
-					const img = new Image();
-					img.crossOrigin = 'anonymous'; // 允许跨域加载图片
-					img.src = src;
-					img.onload = () => {
-						const canvas = document.createElement('canvas');
-						canvas.width = img.width;
-						canvas.height = img.height;
-						const ctx = canvas.getContext('2d');
-						ctx.drawImage(img, 0, 0);
-						canvas.toBlob((blob) => {
-							const a = document.createElement('a');
-							a.href = URL.createObjectURL(blob);
-							a.download = src.split('/').pop().replace('.webp', '.jpg'); // 替换扩展名为 .jpg
-							a.click();
-						}, 'image/jpg');
-					};
-				} else {
-					// 直接下载其他非 .webp 图片
-					fetch(src)
-						.then((response) => response.blob())
-						.then((blob) => {
-							const a = document.createElement('a');
-							a.href = URL.createObjectURL(blob);
-							a.download = src.split('/').pop(); // 使用图片文件名
-							a.click();
-						})
-						.catch((error) => console.error('下载图片失败:', error));
-				}
+		if (selectedImages.length > 1) {
+			const imagePromises = selectedImages.map((src) => {
+				return fetch(src)
+					.then((response) => response.blob())
+					.then((blob) => {
+						const n = src.split('/').pop();
+						const fileName = src.endsWith('.webp') ? n.replace('.webp', '.jpg') : n;
+						zip.file(fileName, blob);
+					})
+					.catch((error) => console.error(`下载图片失败: ${src}`, error));
 			});
+
+			await Promise.all(imagePromises);
+
+			zip.generateAsync({ type: 'blob' }).then((content) => {
+				const a = document.createElement('a');
+				a.href = URL.createObjectURL(content);
+				a.download = 'Images.zip';
+				a.click();
+			});
+		} else if (selectedImages.length === 1) {
+			const src = selectedImages[0];
+			fetch(src)
+				.then((response) => response.blob())
+				.then((blob) => {
+					const a = document.createElement('a');
+					a.href = URL.createObjectURL(blob);
+					const n = src.split('/').pop();
+					const fileName = src.endsWith('.webp') ? n.replace('.webp', '.jpg') : n;
+					a.download = fileName;
+					a.click();
+				})
+				.catch((error) => console.error('下载图片失败:', error));
 		} else {
 			alert('请选择要下载的图片！');
 		}
