@@ -224,12 +224,12 @@ $(document).ready(() => {
 		});
 
 		if (selectedMedias.length > 1) {
-			const mediaPromises = selectedMedias.map((src) => {
+			const mediaPromises = selectedMedias.map((src, idx) => {
 				if (src.startsWith('data:')) {
 					// Base64 格式处理
 					const base64Data = src.split(',')[1];
 					const mimeType = src.match(/data:(.*?);base64/)[1];
-					const fileName = `base64_image_${base64Data.slice(0, 8)}.${mimeType.split('/')[1]}`;
+					const fileName = `base64_image_${idx}.${mimeType.split('/')[1]}`;
 					zip.file(fileName, base64Data, { base64: true });
 				} else {
 					// 普通 URL 处理
@@ -259,7 +259,7 @@ $(document).ready(() => {
 				// Base64 格式处理
 				const base64Data = src.split(',')[1];
 				const mimeType = src.match(/data:(.*?);base64/)[1];
-				const fileName = `base64_image_${base64Data.slice(0, 8)}.${mimeType.split('/')[1]}`;
+				const fileName = `base64_image.${mimeType.split('/')[1]}`;
 				const blob = new Blob([Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0))], { type: mimeType });
 				const a = document.createElement('a');
 				a.href = URL.createObjectURL(blob);
