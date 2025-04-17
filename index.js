@@ -58,13 +58,15 @@ $(document).ready(() => {
 					z-index: 1;
 					cursor: pointer;
 				}
-				.image img {
+				.image img,
+				.image video {
 					width: 100%;
 					height: 100%;
 					border-radius: 10px;
 					transition: all 0.3s ease-in-out;
 				}
-				.image img:hover {
+				.image img:hover,
+				.image video:hover {
 					transform: scale(1.1);
 				}
         .bottomBtn {
@@ -172,55 +174,119 @@ $(document).ready(() => {
 					text-align: center;
 					font-size: 24px;
 				}
+				#loadingOverlay {
+					position: fixed;
+					top: 0;
+					left: 0;
+					width: 100%;
+					height: 100%;
+					background-color: rgba(0, 0, 0, 0.5);
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					z-index: 10000;
+					color: #fff;
+					font-size: 18px;
+				}
+				#loadingOverlay span {
+					background-color: rgba(0, 0, 0, 0.8);
+					padding: 10px 20px;
+					border-radius: 5px;
+				}
       `;
 	document.head.appendChild(style);
 
-	// 修改 downloadImages 函数，将多张图片打包成 ZIP 文件
-	const downloadImages = async () => {
+	// 显示 loading 状态
+	const showLoading = () => {
+		const $loading = $(`
+			<div id="loadingOverlay">
+				<span>下载中，请稍候...</span>
+			</div>
+		`);
+		$('body').append($loading);
+	};
+
+	// 隐藏 loading 状态
+	const hideLoading = () => {
+		$('#loadingOverlay').remove();
+	};
+
+	// 修改 downloadMedias 函数，将多张媒体文件打包成 ZIP 文件
+	const downloadMedias = async () => {
+		showLoading(); // 显示 loading 状态
 		const zip = new JSZip();
-		const selectedImages = [];
+		const selectedMedias = [];
 		$('.image-checkbox:checked').each((_, checkbox) => {
-			let src = $(checkbox).siblings('img').attr('src');
+			let src = $(checkbox).siblings('img, video').attr('src');
 			// 去除扩展名后面的问号内容
-			src = src.split('?')[0];
-			selectedImages.push(src);
+			src = src.startsWith('data:') ? src : src.split('?')[0];
+			selectedMedias.push(src);
 		});
 
-		if (selectedImages.length > 1) {
-			const imagePromises = selectedImages.map((src) => {
-				return fetch(src)
-					.then((response) => response.blob())
-					.then((blob) => {
-						const n = src.split('/').pop();
-						const fileName = src.endsWith('.webp') ? n.replace('.webp', '.jpg') : n;
-						zip.file(fileName, blob);
-					})
-					.catch((error) => console.error(`下载图片失败: ${src}`, error));
+		if (selectedMedias.length > 1) {
+			const mediaPromises = selectedMedias.map((src) => {
+				if (src.startsWith('data:')) {
+					// Base64 格式处理
+					const base64Data = src.split(',')[1];
+					const mimeType = src.match(/data:(.*?);base64/)[1];
+					const fileName = `base64_image_${base64Data.slice(0, 8)}.${mimeType.split('/')[1]}`;
+					zip.file(fileName, base64Data, { base64: true });
+				} else {
+					// 普通 URL 处理
+					return fetch(src)
+						.then((response) => response.blob())
+						.then((blob) => {
+							const n = src.split('/').pop();
+							const fileName = src.endsWith('.webp') ? n.replace('.webp', '.jpg') : n;
+							zip.file(fileName, blob);
+						})
+						.catch((error) => console.error(`下载媒体文件失败: ${src}`, error));
+				}
 			});
 
-			await Promise.all(imagePromises);
+			await Promise.all(mediaPromises);
 
 			zip.generateAsync({ type: 'blob' }).then((content) => {
 				const a = document.createElement('a');
 				a.href = URL.createObjectURL(content);
-				a.download = 'Images.zip';
+				a.download = 'Medias.zip';
 				a.click();
+				hideLoading(); // 隐藏 loading 状态
 			});
-		} else if (selectedImages.length === 1) {
-			const src = selectedImages[0];
-			fetch(src)
-				.then((response) => response.blob())
-				.then((blob) => {
-					const a = document.createElement('a');
-					a.href = URL.createObjectURL(blob);
-					const n = src.split('/').pop();
-					const fileName = src.endsWith('.webp') ? n.replace('.webp', '.jpg') : n;
-					a.download = fileName;
-					a.click();
-				})
-				.catch((error) => console.error('下载图片失败:', error));
+		} else if (selectedMedias.length === 1) {
+			const src = selectedMedias[0];
+			if (src.startsWith('data:')) {
+				// Base64 格式处理
+				const base64Data = src.split(',')[1];
+				const mimeType = src.match(/data:(.*?);base64/)[1];
+				const fileName = `base64_image_${base64Data.slice(0, 8)}.${mimeType.split('/')[1]}`;
+				const blob = new Blob([Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0))], { type: mimeType });
+				const a = document.createElement('a');
+				a.href = URL.createObjectURL(blob);
+				a.download = fileName;
+				a.click();
+				hideLoading(); // 隐藏 loading 状态
+			} else {
+				// 普通 URL 处理
+				fetch(src)
+					.then((response) => response.blob())
+					.then((blob) => {
+						const a = document.createElement('a');
+						a.href = URL.createObjectURL(blob);
+						const n = src.split('/').pop();
+						const fileName = src.endsWith('.webp') ? n.replace('.webp', '.jpg') : n;
+						a.download = fileName;
+						a.click();
+						hideLoading(); // 隐藏 loading 状态
+					})
+					.catch((error) => {
+						console.error('下载媒体文件失败:', error);
+						hideLoading(); // 隐藏 loading 状态
+					});
+			}
 		} else {
-			alert('请选择要下载的图片！');
+			alert('请选择要下载的媒体文件！');
+			hideLoading(); // 隐藏 loading 状态
 		}
 	};
 
@@ -246,13 +312,13 @@ $(document).ready(() => {
 		});
 	};
 
-	// 获取所有图片，包括背景图片
-	const getAllImages = () => {
-		const images = [];
+	// 获取所有媒体文件，包括背景图片
+	const getAllMedias = () => {
+		const Medias = [];
 		// 获取所有 <img> 标签的图片
 		$('img').each((_, img) => {
 			if (img.src) {
-				images.push(img.src);
+				Medias.push(img.src);
 			}
 		});
 
@@ -261,25 +327,32 @@ $(document).ready(() => {
 			const bgImage = $(el).css('background-image');
 			if (bgImage && bgImage.startsWith('url(')) {
 				const url = bgImage.slice(5, -2); // 去掉 url(" 和 ")
-				images.push(url);
+				Medias.push(url);
 			}
 		});
 
-		return [...new Set(images)]; // 去重
+		// 获取所有 <video> 标签的图片
+		$('video').each((_, video) => {
+			if (video.src) {
+				Medias.push(video.src);
+			}
+		});
+
+		return [...new Set(Medias)]; // 去重
 	};
 
-	// 修改 displayImages 函数，添加全选和全不选按钮
-	const displayImages = () => {
-		const images = getAllImages();
-		if (images.length) {
+	// 修改 displayMedias 函数，添加全选和全不选按钮
+	const displayMedias = () => {
+		const Medias = getAllMedias();
+		if (Medias.length) {
 			if (!$('#downloadButton').length) {
 				$('#popupContent').append(`
 					<div class="bottomBtn">
-						<button id="downloadButton">下载图片</button>
+						<button id="downloadButton">下载媒体文件</button>
 					</div>
 				`);
 			}
-			$('#downloadButton').off('click').on('click', downloadImages);
+			$('#downloadButton').off('click').on('click', downloadMedias);
 
 			if (!$('#selectAllButton').length) {
 				$('#selectButtons').append(`
@@ -301,11 +374,14 @@ $(document).ready(() => {
 			const $content = $('#content');
 			$content.empty(); // 清空内容
 
-			images.forEach((src) => {
+			Medias.forEach((src) => {
+				// 判断src是否为 Video
+				let mDom = `<img src="${src}" />`;
+				if (src.includes('.mp4') || src.includes('.webm') || src.includes('.ogg')) mDom = `<video src="${src}" controls />`;
 				const $imgContainer = $(`
 					<div class="image">
 						<input type="checkbox" class="image-checkbox" />
-						<img src="${src}" />
+						${mDom}
 					</div>
 				`);
 				$content.append($imgContainer);
@@ -321,7 +397,7 @@ $(document).ready(() => {
         <div id="popup">
           <div id="popupContent">
             <span id="popupClose">&times;</span>
-            <h1 id="popupTitle">所有图片</h1>
+            <h1 id="popupTitle">所有媒体文件</h1>
 						<div id="selectButtons"></div>
             <div id="content"></div>
           </div>
@@ -329,8 +405,8 @@ $(document).ready(() => {
       `);
 		$('body').append($popup);
 
-		// 显示图片
-		displayImages();
+		// 显示媒体文件
+		displayMedias();
 
 		// 关闭弹出框
 		$('#popupClose').on('click', () => {

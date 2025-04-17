@@ -1,8 +1,8 @@
 {
 	"manifest_version": 3,
-	"name": "[Monster] Get Web Images",
+	"name": "[Monster] Get Web Medias",
 	"version": "1.0",
-	"description": "获取网页图片",
+	"description": "获取网页媒体文件",
 	"permissions": ["activeTab", "scripting"],
 	"action": {
 		"default_icon": {
