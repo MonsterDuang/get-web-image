@@ -280,8 +280,9 @@ $(document).ready(() => {
 						hideLoading(); // 隐藏 loading 状态
 					})
 					.catch((error) => {
-						console.error('下载媒体文件失败:', error);
 						hideLoading(); // 隐藏 loading 状态
+						alert('下载媒体文件失败:' + error);
+						console.error('下载媒体文件失败:', error);
 					});
 			}
 		} else {
@@ -314,11 +315,11 @@ $(document).ready(() => {
 
 	// 获取所有媒体文件，包括背景图片
 	const getAllMedias = () => {
-		const Medias = [];
+		const images = [];
 		// 获取所有 <img> 标签的图片
 		$('img').each((_, img) => {
 			if (img.src) {
-				Medias.push(img.src);
+				images.push(img.src);
 			}
 		});
 
@@ -327,18 +328,18 @@ $(document).ready(() => {
 			const bgImage = $(el).css('background-image');
 			if (bgImage && bgImage.startsWith('url(')) {
 				const url = bgImage.slice(5, -2); // 去掉 url(" 和 ")
-				Medias.push(url);
+				images.push(url);
 			}
 		});
 
 		// 获取所有 <video> 标签的图片
+		const videos = [];
 		$('video').each((_, video) => {
 			if (video.src) {
-				Medias.push(video.src);
+				videos.push({ src: video.src, type: 'video' });
 			}
 		});
-
-		return [...new Set(Medias)]; // 去重
+		return [...new Set(images), ...videos]; // 去重
 	};
 
 	// 修改 displayMedias 函数，添加全选和全不选按钮
@@ -374,10 +375,10 @@ $(document).ready(() => {
 			const $content = $('#content');
 			$content.empty(); // 清空内容
 
-			Medias.forEach((src) => {
+			Medias.forEach((x) => {
 				// 判断src是否为 Video
-				let mDom = `<img src="${src}" />`;
-				if (src.includes('.mp4') || src.includes('.webm') || src.includes('.ogg')) mDom = `<video src="${src}" controls />`;
+				let mDom = `<img src="${x}" />`;
+				if (x.type === 'video') mDom = `<video src="${x.src}" controls />`;
 				const $imgContainer = $(`
 					<div class="image">
 						<input type="checkbox" class="image-checkbox" />
